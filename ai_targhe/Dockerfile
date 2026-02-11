@@ -1,4 +1,5 @@
-ARG BUILD_FROM
+# Default per build locale; il Supervisor passa BUILD_FROM da build.yaml
+ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21
 FROM ${BUILD_FROM}
 
 # Dipendenze di sistema per OpenCV e compilazione
