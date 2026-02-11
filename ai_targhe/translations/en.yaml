@@ -1,0 +1,19 @@
+configuration:
+  camera_entity:
+    name: Camera Entity
+    description: "Entity ID of the HA camera to monitor (e.g., camera.ingresso)"
+  scan_interval:
+    name: Scan Interval
+    description: "Seconds between each snapshot analysis (1-60)"
+  target_plates:
+    name: Target Plates
+    description: "List of authorized Italian license plates (e.g., AB123CD)"
+  confidence_threshold:
+    name: Confidence Threshold
+    description: "Minimum YOLO detection confidence (0.1-1.0)"
+  target_detected_timeout:
+    name: Target Detection Timeout
+    description: "Seconds the binary sensor stays ON after detecting a target plate"
+  log_level:
+    name: Log Level
+    description: "Logging verbosity"

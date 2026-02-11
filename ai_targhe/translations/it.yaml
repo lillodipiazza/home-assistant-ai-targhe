@@ -1,0 +1,19 @@
+configuration:
+  camera_entity:
+    name: Entità Camera
+    description: "Entity ID della camera HA da monitorare (es. camera.ingresso)"
+  scan_interval:
+    name: Intervallo Scansione
+    description: "Secondi tra ogni analisi dello snapshot (1-60)"
+  target_plates:
+    name: Targhe Target
+    description: "Lista di targhe italiane autorizzate (es. AB123CD)"
+  confidence_threshold:
+    name: Soglia Confidenza
+    description: "Confidenza minima rilevamento YOLO (0.1-1.0)"
+  target_detected_timeout:
+    name: Timeout Rilevamento Target
+    description: "Secondi in cui il binary sensor resta ON dopo aver rilevato una targa target"
+  log_level:
+    name: Livello Log
+    description: "Verbosità dei log"

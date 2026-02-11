@@ -1,0 +1,6 @@
+build_from:
+  amd64: ghcr.io/home-assistant/amd64-base-python:3.11
+  aarch64: ghcr.io/home-assistant/aarch64-base-python:3.11
+labels:
+  org.opencontainers.image.title: "AI Targhe"
+  org.opencontainers.image.description: "Italian license plate recognition with YOLO + EasyOCR"

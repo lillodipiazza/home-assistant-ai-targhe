@@ -1,0 +1,29 @@
+name: "AI Targhe"
+description: "Riconoscimento targhe italiane con YOLO + EasyOCR"
+version: "1.0.0"
+slug: "ai_targhe"
+init: false
+arch:
+  - amd64
+  - aarch64
+homeassistant_api: true
+map:
+  - data:rw
+options:
+  camera_entity: "camera.ingresso"
+  scan_interval: 5
+  target_plates:
+    - "AB123CD"
+  confidence_threshold: 0.5
+  target_detected_timeout: 30
+  log_level: "info"
+schema:
+  camera_entity: str
+  scan_interval: "int(1,60)"
+  target_plates:
+    - str
+  confidence_threshold: "float(0.1,1.0)"
+  target_detected_timeout: "int(5,300)"
+  log_level: list(debug|info|warning|error)
+startup: application
+boot: auto
