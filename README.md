@@ -1,6 +1,7 @@
 # AI Targhe - Home Assistant Add-on
 
-Riconoscimento automatico di targhe italiane tramite AI (YOLO + EasyOCR).
+Riconoscimento automatico di targhe italiane tramite AI (YOLO ONNX + Tesseract OCR).  
+L’addon **non usa PyTorch** (incompatibile con l’immagine base Alpine): usa un modello YOLO esportato in ONNX e Tesseract per l’OCR.
 
 ## Funzionalità
 
@@ -9,6 +10,16 @@ Riconoscimento automatico di targhe italiane tramite AI (YOLO + EasyOCR).
 - Sensore con l'ultima targa rilevata
 - Binary sensor ON/OFF quando una targa autorizzata viene riconosciuta
 - Evento `ai_targhe_plate_detected` per automazioni avanzate
+
+## Build dell’addon (sviluppatori)
+
+L’immagine Docker usa il modello **ONNX** (`best.onnx`). Se hai solo `best.pt`:
+
+1. Su un ambiente con Python e PyTorch/Ultralytics:  
+   `pip install ultralytics`  
+2. Dalla root del repo:  
+   `python scripts/export_onnx.py`  
+3. Verrà creato `ai_targhe/models/best.onnx`. Includilo nel repository e ricostruisci l’addon.
 
 ## Installazione
 
