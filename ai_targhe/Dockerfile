@@ -2,7 +2,7 @@
 ARG BUILD_FROM=ghcr.io/home-assistant/amd64-base-python:3.13-alpine3.21
 FROM ${BUILD_FROM}
 
-# Dipendenze di sistema per OpenCV, Tesseract OCR e compilazione
+# Dipendenze di sistema per OpenCV (build da sorgente), Tesseract OCR e compilazione
 RUN apk add --no-cache \
     libstdc++ \
     libgcc \
@@ -13,6 +13,9 @@ RUN apk add --no-cache \
     openblas-dev \
     g++ \
     gcc \
+    make \
+    cmake \
+    ninja \
     musl-dev \
     python3-dev \
     tesseract-ocr \
