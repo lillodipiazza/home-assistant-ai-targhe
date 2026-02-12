@@ -41,6 +41,10 @@ def main():
     )
     logger = logging.getLogger("ai_targhe")
 
+    # Riduce il rumore da librerie esterne (tesseract, HTTP)
+    logging.getLogger("pytesseract").setLevel(logging.WARNING)
+    logging.getLogger("urllib3").setLevel(logging.WARNING)
+
     logger.info("=== AI Targhe Add-on Starting ===")
     logger.info("Camera: %s", config.camera_entity)
     logger.info("Target plates: %s", config.target_plates)
