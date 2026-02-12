@@ -1,8 +1,15 @@
 # Changelog
 
+## 1.0.2
+
+- 
+
+
 ## 1.0.1
 
+- Fix avvio addon: corretto shebang in run.sh (`#!/usr/bin/with-contenv bashio`)
 - Fix avvio addon: corretto `init: true` in config.yaml per compatibilità con s6-overlay
+- Rimosso riferimento a EasyOCR non più utilizzato (run.sh e metadati)
 - Aggiornata descrizione: EasyOCR sostituito con Tesseract OCR
 
 ## 1.0.0
