@@ -2,6 +2,7 @@
 
 import logging
 import os
+import re
 import time
 
 import requests
@@ -9,6 +10,64 @@ import requests
 logger = logging.getLogger(__name__)
 
 SUPERVISOR_URL = "http://supervisor/core/api"
+
+
+def _first_jpeg_from_mjpeg_stream(stream, timeout: float = 20.0) -> bytes | None:
+    """Read the first JPEG frame from an MJPEG (multipart) stream.
+
+    HA uses multipart/x-mixed-replace; each part is a JPEG with
+    Content-Length. We read until we have one full frame then stop.
+    """
+    deadline = time.monotonic() + timeout
+    content_type = stream.headers.get("Content-Type", "")
+    boundary_match = re.search(r"boundary=(\S+)", content_type)
+    if not boundary_match:
+        logger.debug("No boundary in MJPEG Content-Type: %s", content_type)
+        return None
+    boundary = boundary_match.group(1).strip().encode("ascii")
+    if not boundary.startswith(b"--"):
+        boundary = b"--" + boundary
+
+    buf = b""
+    state = "find_boundary"
+    content_length = 0
+
+    for chunk in stream.iter_content(chunk_size=8192):
+        if time.monotonic() > deadline:
+            logger.warning("Timeout reading first frame from MJPEG stream")
+            return None
+        if not chunk:
+            continue
+        buf += chunk
+
+        if state == "find_boundary":
+            idx = buf.find(b"\r\n\r\n")
+            if idx == -1:
+                if len(buf) > 8192:
+                    buf = buf[-2048:]
+                continue
+            headers_block = buf[:idx]
+            buf = buf[idx + 4:]
+            state = "body"
+            for line in headers_block.split(b"\r\n"):
+                if line.lower().startswith(b"content-length:"):
+                    try:
+                        content_length = int(line.split(b":", 1)[1].strip())
+                    except (ValueError, IndexError):
+                        pass
+                    break
+            if content_length <= 0:
+                logger.debug("No Content-Length in MJPEG part headers")
+                return None
+
+        if state == "body":
+            if len(buf) >= content_length:
+                return buf[:content_length]
+            if len(buf) > 2 * 1024 * 1024:
+                logger.warning("MJPEG part too large, aborting")
+                return None
+
+    return None
 
 
 class HAClient:
@@ -32,9 +91,8 @@ class HAClient:
     def get_camera_snapshot(self, entity_id: str) -> bytes | None:
         """Fetch a JPEG snapshot from a HA camera entity.
 
-        Uses the camera_proxy API. The camera must support still images;
-        stream-only cameras often return 500 (configure a still image URL
-        in the camera integration if possible).
+        Tries the still-image API first; if the camera is stream-only (500),
+        falls back to the MJPEG stream and uses the first frame.
 
         Args:
             entity_id: Camera entity, e.g. 'camera.ingresso'
@@ -42,17 +100,31 @@ class HAClient:
         Returns:
             Raw JPEG bytes, or None on error.
         """
-        url = f"{SUPERVISOR_URL}/camera_proxy/{entity_id}"
+        # 1) Try still-image proxy (works when camera has native snapshot)
+        url_still = f"{SUPERVISOR_URL}/camera_proxy/{entity_id}"
         req_headers = {
             **self.headers,
             "Accept": "image/jpeg, image/*, */*",
         }
         try:
-            resp = requests.get(url, headers=req_headers, timeout=15)
+            resp = requests.get(url_still, headers=req_headers, timeout=15)
             resp.raise_for_status()
             return resp.content
         except requests.RequestException as e:
-            # Log response body on 5xx to help debug (e.g. stream-only camera)
+            got_5xx = (
+                getattr(e, "response", None) is not None
+                and e.response.status_code >= 500
+            )
+            if got_5xx:
+                logger.debug(
+                    "Still image failed (%s), trying stream for %s",
+                    e.response.status_code,
+                    entity_id,
+                )
+                # 2) Fallback: take first frame from MJPEG stream
+                jpeg = self._get_snapshot_from_stream(entity_id)
+                if jpeg is not None:
+                    return jpeg
             if getattr(e, "response", None) is not None:
                 r = e.response
                 if r.status_code >= 500 and r.text:
@@ -66,6 +138,22 @@ class HAClient:
                     logger.error("Failed to get snapshot from %s: %s", entity_id, e)
             else:
                 logger.error("Failed to get snapshot from %s: %s", entity_id, e)
+            return None
+
+    def _get_snapshot_from_stream(self, entity_id: str) -> bytes | None:
+        """Get one JPEG frame from camera_proxy_stream (for stream-only cameras)."""
+        url = f"{SUPERVISOR_URL}/camera_proxy_stream/{entity_id}"
+        try:
+            resp = requests.get(
+                url,
+                headers={**self.headers, "Accept": "multipart/x-mixed-replace, */*"},
+                stream=True,
+                timeout=25,
+            )
+            resp.raise_for_status()
+            return _first_jpeg_from_mjpeg_stream(resp, timeout=20.0)
+        except requests.RequestException as e:
+            logger.debug("Stream snapshot failed for %s: %s", entity_id, e)
             return None
 
     def update_sensor(self, entity_id: str, state: str,
