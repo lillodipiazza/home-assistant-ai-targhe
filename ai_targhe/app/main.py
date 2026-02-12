@@ -84,9 +84,17 @@ def main():
         plates = recognizer.detect(frame)
 
         # 4d. Report each detected plate to HA
+        if plates:
+            logger.info("Scan: %d targa/e rilevata/e", len(plates))
         for plate_info in plates:
             plate_text = plate_info["plate"]
             is_target = plate_text in config.target_plates
+            logger.info(
+                "Targa rilevata: %s (confidence: %.0f%%, target: %s)",
+                plate_text,
+                plate_info["confidence"] * 100,
+                "sì" if is_target else "no",
+            )
 
             ha.report_plate(
                 plate=plate_text,
