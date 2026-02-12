@@ -147,6 +147,11 @@ class PlateRecognizer:
             scores.append(float(score))
 
         if not boxes_xywh:
+            logger.info(
+                "Scan: YOLO non ha trovato nessuna regione targa (soglia %.2f). "
+                "Prova ad abbassare confidence_threshold o a migliorare inquadratura/illuminazione.",
+                self.confidence_threshold,
+            )
             return []
 
         # Convert to xyxy in 640x640 space
@@ -189,4 +194,11 @@ class PlateRecognizer:
                     "Targa rilevata: %s (OCR: %.0f%%, YOLO: %.0f%%)",
                     plate_text, ocr_conf * 100, scores[i] * 100,
                 )
+
+        if boxes_xywh and not plates:
+            logger.info(
+                "Scan: YOLO ha trovato %d regione/i targa ma l'OCR non ha riconosciuto "
+                "nessuna targa valida (formato italiano AA000AA). Controlla qualità/angolazione.",
+                len(indices),
+            )
         return plates

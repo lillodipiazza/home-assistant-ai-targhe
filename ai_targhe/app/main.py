@@ -84,6 +84,8 @@ def main():
             time.sleep(config.scan_interval)
             continue
 
+        logger.debug("Snapshot OK (%d bytes, %dx%d px), running detection...", len(jpeg_bytes), frame.shape[1], frame.shape[0])
+
         # 4c. Detect plates
         plates = recognizer.detect(frame)
 
