@@ -1,6 +1,6 @@
 name: "AI Targhe"
 description: "Riconoscimento targhe italiane con YOLO + Tesseract OCR"
-version: "1.0.4"
+version: "1.0.5"
 slug: "ai_targhe"
 init: false
 arch:

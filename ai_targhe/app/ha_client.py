@@ -32,6 +32,10 @@ class HAClient:
     def get_camera_snapshot(self, entity_id: str) -> bytes | None:
         """Fetch a JPEG snapshot from a HA camera entity.
 
+        Uses the camera_proxy API. The camera must support still images;
+        stream-only cameras often return 500 (configure a still image URL
+        in the camera integration if possible).
+
         Args:
             entity_id: Camera entity, e.g. 'camera.ingresso'
 
@@ -39,12 +43,29 @@ class HAClient:
             Raw JPEG bytes, or None on error.
         """
         url = f"{SUPERVISOR_URL}/camera_proxy/{entity_id}"
+        req_headers = {
+            **self.headers,
+            "Accept": "image/jpeg, image/*, */*",
+        }
         try:
-            resp = requests.get(url, headers=self.headers, timeout=10)
+            resp = requests.get(url, headers=req_headers, timeout=15)
             resp.raise_for_status()
             return resp.content
         except requests.RequestException as e:
-            logger.error("Failed to get snapshot from %s: %s", entity_id, e)
+            # Log response body on 5xx to help debug (e.g. stream-only camera)
+            if getattr(e, "response", None) is not None:
+                r = e.response
+                if r.status_code >= 500 and r.text:
+                    logger.error(
+                        "Snapshot %s failed (%s). Server response: %s",
+                        entity_id,
+                        r.status_code,
+                        r.text[:500],
+                    )
+                else:
+                    logger.error("Failed to get snapshot from %s: %s", entity_id, e)
+            else:
+                logger.error("Failed to get snapshot from %s: %s", entity_id, e)
             return None
 
     def update_sensor(self, entity_id: str, state: str,
