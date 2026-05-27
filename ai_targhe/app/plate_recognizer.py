@@ -19,7 +19,7 @@ MODEL_DIR = os.path.join(os.path.dirname(__file__), "models")
 MODEL_ONNX = os.path.join(MODEL_DIR, "best.onnx")
 
 
-def _letterbox(img: np.ndarray, target_size: int = INPUT_SIZE) -> tuple[np.ndarray, float, float, int, int]:
+def _letterbox(img: np.ndarray, target_size: int = INPUT_SIZE) -> tuple[np.ndarray, float, int, int, int, int]:
     """Letterbox resize; returns (padded_img, scale, pad_x, pad_y, orig_w, orig_h)."""
     h, w = img.shape[:2]
     scale = min(target_size / h, target_size / w)
@@ -190,7 +190,7 @@ class PlateRecognizer:
                     "yolo_confidence": round(scores[i], 3),
                     "bbox": [x1, y1, x2, y2],
                 })
-                logger.info(
+                logger.debug(
                     "Targa rilevata: %s (OCR: %.0f%%, YOLO: %.0f%%)",
                     plate_text, ocr_conf * 100, scores[i] * 100,
                 )
